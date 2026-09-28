@@ -2,9 +2,12 @@
   "expo": {
     "name": "T booket",
     "slug": "t-booket",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#000000"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.anas330.tbooket"
