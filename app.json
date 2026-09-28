@@ -25,10 +25,9 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "sdkVersion": "50.0.0",
     "extra": {
       "eas": {
-        "projectId": "t-booket"
+        "projectId": "8864ca9c-8796-4bfe-a9a7-888b20252379"
       }
     }
   }
