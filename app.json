@@ -12,7 +12,6 @@
     "android": {
       "package": "com.anas330.tbooket"
     },
-    "web": {},
     "extra": {
       "eas": {
         "projectId": "b0851773-ebfa-4d10-bcf6-77deaee9f7aa"
