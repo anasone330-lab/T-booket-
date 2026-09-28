@@ -1,20 +1,20 @@
 {
   "expo": {
     "name": "T booket",
-    "slug": "t-booket-new",
-    "version": "1.0.0",
+    "slug": "t-booket",
+    "version": "1.0.4",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anas330.tbooketnew"
+      "bundleIdentifier": "com.anas330.tbooket"
     },
     "android": {
-      "package": "com.anas330.tbooketnew"
+      "package": "com.anas330.tbooket"
     },
     "extra": {
       "eas": {
-        "projectId": "ضع_معرف_المشروع_الجديد_هنا"
+        "projectId": "b0851773-ebfa-4d10-bcf6-77deaee9f7aa"
       }
     }
   }
