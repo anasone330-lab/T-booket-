@@ -3,17 +3,12 @@
     "version": ">= 12.0.0"
   },
   "build": {
-    "development": {
-      "developmentClient": true,
-      "distribution": "internal"
-    },
     "preview": {
-      "distribution": "internal",
       "android": {
         "buildType": "apk"
       },
       "env": {
-        "YARN_ENABLE_IMMUTABLE_INSTALLS": "false"
+        "NODE_VERSION": "22.0.0"
       }
     },
     "production": {}
