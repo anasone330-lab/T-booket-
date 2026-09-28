@@ -1,16 +1,16 @@
 {
   "expo": {
     "name": "T booket",
-    "slug": "t-booket",
-    "version": "1.0.2",
+    "slug": "t-booket-2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anas330.tbooket"
+      "bundleIdentifier": "com.anas330.tbooket2"
     },
     "android": {
-      "package": "com.anas330.tbooket"
+      "package": "com.anas330.tbooket2"
     },
     "extra": {
       "eas": {
