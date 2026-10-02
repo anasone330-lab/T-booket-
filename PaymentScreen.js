@@ -1,79 +1,75 @@
-import React from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  ScrollView, 
-  Alert 
-} from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 
-export default function PaymentScreen({ route, navigation }) {
-  const { venueName = "الملعب", timeSlot = "الموعد", price = "0 دينار" } = route?.params || {};
+export default function PaymentScreen({ route, navigation, onPaymentComplete }) {
+  const [selectedMethod, setSelectedMethod] = useState('mastercard');
 
-  const handlePayment = () => {
+  const handleConfirmPayment = () => {
     Alert.alert(
       'تأكيد الدفع',
-      `هل تريد تأكيد دفع ${price} عبر ماستركارد الرافدين؟`,
+      selectedMethod === 'mastercard' 
+        ? 'تم اختيار الدفع عبر ماستركارد الرافدين بنجاح.' 
+        : 'تم اختيار الدفع نقداً عند الوصول.',
       [
-        { text: 'إلغاء', style: 'cancel' },
-        { 
-          text: 'تأكيد ودفع', 
+        {
+          text: 'حسناً',
           onPress: () => {
-            Alert.alert('تم بنجاح', 'تمت عملية الدفع وحجز الملعب بنجاح!');
-            navigation.navigate('Home'); // الرجوع للشاشة الرئيسية
-          } 
-        }
+            if (onPaymentComplete) onPaymentComplete(selectedMethod);
+          },
+        },
       ]
     );
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>تفاصيل الدفع</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>طرق الدفع 💳</Text>
+      <Text style={styles.subtitle}>اختر طريقة الدفع المناسبة لك لإتمام حجز الملعب</Text>
 
-      {/* ملخص الحجز */}
-      <View style={styles.card}>
-        <Text style={styles.label}>الملعب:</Text>
-        <Text style={styles.value}>{venueName}</Text>
-
-        <Text style={styles.label}>الوقت:</Text>
-        <Text style={styles.value}>{timeSlot}</Text>
-
-        <Text style={styles.label}>المبلغ المطلوب:</Text>
-        <Text style={styles.price}>{price}</Text>
-      </View>
-
-      {/* طريقة الدفع الوحيدة */}
-      <Text style={styles.sectionTitle}>طريقة الدفع:</Text>
-      <View style={styles.paymentMethod}>
-        <Text style={styles.icon}>💳</Text>
-        <View>
-          <Text style={styles.methodName}>ماستركارد الرافدين</Text>
-          <Text style={styles.methodSub}>دفع إلكتروني مباشر</Text>
+      {/* خيار ماستركارد الرافدين */}
+      <TouchableOpacity 
+        style={[styles.cardOption, selectedMethod === 'mastercard' && styles.selectedCard]}
+        onPress={() => setSelectedMethod('mastercard')}
+      >
+        <Text style={styles.cardIcon}>💳</Text>
+        <View style={styles.cardInfo}>
+          <Text style={styles.cardTitle}>ماستركارد الرافدين</Text>
+          <Text style={styles.cardDetails}>**** **** **** 4321 (افتراضي)</Text>
         </View>
-      </View>
-
-      {/* زر الدفع */}
-      <TouchableOpacity style={styles.payBtn} onPress={handlePayment}>
-        <Text style={styles.payBtnText}>إتمام الدفع الآن</Text>
+        <Text style={styles.radio}>{selectedMethod === 'mastercard' ? '🔘' : '⚪'}</Text>
       </TouchableOpacity>
-    </ScrollView>
+
+      {/* خيار الدفع النقدي */}
+      <TouchableOpacity 
+        style={[styles.cardOption, selectedMethod === 'cash' && styles.selectedCard]}
+        onPress={() => setSelectedMethod('cash')}
+      >
+        <Text style={styles.cardIcon}>💵</Text>
+        <View style={styles.cardInfo}>
+          <Text style={styles.cardTitle}>الدفع نقداً عند الوصول</Text>
+          <Text style={styles.cardDetails}>الدفع مباشرة لدى إدارة الملعب</Text>
+        </View>
+        <Text style={styles.radio}>{selectedMethod === 'cash' ? '🔘' : '⚪'}</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.confirmButton} onPress={handleConfirmPayment}>
+        <Text style={styles.confirmButtonText}>تأكيد ومتابعة الدفع</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB', padding: 20 },
-  title: { fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginVertical: 15, color: '#111827' },
-  card: { backgroundColor: '#FFFFFF', padding: 15, borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 20 },
-  label: { fontSize: 14, color: '#6B7280', marginTop: 8, textAlign: 'right' },
-  value: { fontSize: 16, fontWeight: 'bold', color: '#111827', textAlign: 'right' },
-  price: { fontSize: 18, fontWeight: 'bold', color: '#059669', textAlign: 'right', marginTop: 4 },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#374151', marginBottom: 10, textAlign: 'right' },
-  paymentMethod: { flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: '#ECFDF5', padding: 15, borderRadius: 10, borderWidth: 2, borderColor: '#10B981' },
-  icon: { fontSize: 24, marginLeft: 10 },
-  methodName: { fontSize: 16, fontWeight: 'bold', color: '#065F46', textAlign: 'right' },
-  methodSub: { fontSize: 12, color: '#059669', textAlign: 'right' },
-  payBtn: { backgroundColor: '#10B981', padding: 15, borderRadius: 10, alignItems: 'center', marginTop: 30 },
-  payBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
+  container: { flex: 1, backgroundColor: '#f8f9fa', padding: 20, justifyContent: 'center' },
+  title: { fontSize: 22, fontWeight: 'bold', textAlign: 'right', marginBottom: 8, color: '#0f172a' },
+  subtitle: { fontSize: 13, color: '#64748b', textAlign: 'right', marginBottom: 24 },
+  cardOption: { flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: '#ffffff', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#cbd5e1', marginBottom: 14 },
+  selectedCard: { borderColor: '#2563eb', backgroundColor: '#eff6ff' },
+  cardIcon: { fontSize: 28, marginLeft: 14 },
+  cardInfo: { flex: 1, alignItems: 'flex-end' },
+  cardTitle: { fontSize: 15, fontWeight: 'bold', color: '#1e293b' },
+  cardDetails: { fontSize: 12, color: '#64748b', marginTop: 3 },
+  radio: { fontSize: 18, marginRight: 10 },
+  confirmButton: { backgroundColor: '#16a34a', padding: 15, borderRadius: 10, alignItems: 'center', marginTop: 20 },
+  confirmButtonText: { color: '#ffffff', fontSize: 16, fontWeight: 'bold' },
 });
