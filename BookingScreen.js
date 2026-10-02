@@ -8,8 +8,12 @@ import {
   Alert, 
   Linking 
 } from 'react-native';
+import PaymentScreen from './PaymentScreen';
 
 export default function BookingScreen({ venueData, onConfirmBooking }) {
+  const [selectedTime, setSelectedTime] = useState(null);
+  const [showPayment, setShowPayment] = useState(false);
+
   const venue = venueData || {
     id: 1,
     name: 'ملعب الأبطال',
@@ -17,8 +21,6 @@ export default function BookingScreen({ venueData, onConfirmBooking }) {
     latitude: 34.1983,
     longitude: 43.8742,
   };
-
-  const [selectedTime, setSelectedTime] = useState(null);
 
   const availableTimes = [
     '04:00 مساءً - 05:00 مساءً',
@@ -42,22 +44,44 @@ export default function BookingScreen({ venueData, onConfirmBooking }) {
       .catch(() => Alert.alert('خطأ', 'تعذر فتح تطبيق الخرائط'));
   };
 
-  const handleBooking = () => {
+  const handleProceedToPayment = () => {
     if (!selectedTime) {
       Alert.alert('تنبيه', 'يرجى اختيار التوقيت المناسب للحجز أولاً');
       return;
     }
+    // الانتقال لشاشة الدفع الإلكتروني عبر ماستركارد الرافدين
+    setShowPayment(true);
+  };
 
+  const handlePaymentComplete = (method) => {
     if (onConfirmBooking) {
       onConfirmBooking({
         venueName: venue.name,
         timeSlot: selectedTime,
         price: venue.price,
+        paymentMethod: method,
       });
     } else {
-      Alert.alert('تم اختيار الوقت', `تم اختيار: ${selectedTime}`);
+      Alert.alert('تم الحجز بنجاح!', `تم حجز ${venue.name} في الوقت (${selectedTime}) بنجاح.`);
+      setShowPayment(false);
+      setSelectedTime(null);
     }
   };
+
+  // إذا تم اختيار الوقت، نعرض شاشة الدفع الإلكتروني لماستركارد الرافدين
+  if (showPayment) {
+    return (
+      <View style={{ flex: 1 }}>
+        <TouchableOpacity 
+          style={styles.backToBooking} 
+          onPress={() => setShowPayment(false)}
+        >
+          <Text style={styles.backToBookingText}>← العودة لاختيار الوقت</Text>
+        </TouchableOpacity>
+        <PaymentScreen onPaymentComplete={handlePaymentComplete} />
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container}>
@@ -68,7 +92,7 @@ export default function BookingScreen({ venueData, onConfirmBooking }) {
         <Text style={styles.wazeButtonText}>🚗 فتح موقع الملعب عبر Waze / Google Maps</Text>
       </TouchableOpacity>
 
-      <Text style={styles.sectionTitle}>اختر الوقت المناسب:</Text>
+      <Text style={styles.sectionTitle}>اختر الوقت المناسب (على مدار 24 ساعة):</Text>
 
       {availableTimes.map((time, index) => (
         <TouchableOpacity
@@ -90,8 +114,8 @@ export default function BookingScreen({ venueData, onConfirmBooking }) {
         </TouchableOpacity>
       ))}
 
-      <TouchableOpacity style={styles.confirmButton} onPress={handleBooking}>
-        <Text style={styles.confirmButtonText}>المتابعة لتأكيد الحجز</Text>
+      <TouchableOpacity style={styles.confirmButton} onPress={handleProceedToPayment}>
+        <Text style={styles.confirmButtonText}>المتابعة إلى الدفع الإلكتروني 💳</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -110,4 +134,6 @@ const styles = StyleSheet.create({
   selectedTimeText: { color: '#FFFFFF', fontWeight: 'bold' },
   confirmButton: { backgroundColor: '#2563EB', paddingVertical: 14, borderRadius: 10, alignItems: 'center', marginTop: 20, marginBottom: 40 },
   confirmButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
+  backToBooking: { padding: 12, backgroundColor: '#e2e8f0', alignItems: 'center' },
+  backToBookingText: { color: '#1e293b', fontWeight: 'bold', fontSize: 14 }
 });
