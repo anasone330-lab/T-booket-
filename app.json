@@ -15,7 +15,7 @@
     "android": {
       "package": "com.anas330.tbooket",
       "permissions": [
-        "INTERNET",
+        "internal",
         "ACCESS_NETWORK_STATE"
       ]
     },
