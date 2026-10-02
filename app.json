@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "T booket",
-    "slug": "t-booket",
+    "name": "T-booket",
+    "slug": "T-booket",
     "version": "1.0.5",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
@@ -13,11 +13,15 @@
       "bundleIdentifier": "com.anas330.tbooket"
     },
     "android": {
-      "package": "com.anas330.tbooket"
+      "package": "com.anas330.tbooket",
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ]
     },
     "extra": {
       "eas": {
-        "projectId": "b0851773-ebfa-4d10-bcf6-77deaee9f7aa"
+        "projectId": "b0851773-ebfa-4d10-bcf6-7d6eaeed9f2a"
       }
     }
   }
