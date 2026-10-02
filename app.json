@@ -1,26 +1,28 @@
 {
   "expo": {
-    "name": "احجز وملعب",
-    "slug": "ahjaz-waleb",
-    "version": "1.0.0",
+    "name": "T-booket",
+    "slug": "t-booket-dcbgwnajxrrkqplpAIh0",
+    "version": "1.0.5",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0f172a"
+      "backgroundColor": "#000000"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.ahjazwaleb.app"
+      "bundleIdentifier": "com.anas330.tbooket"
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0f172a"
-      },
-      "package": "com.ahjazwaleb.app"
+      "package": "com.anas330.tbooket",
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ]
+    },
+    "extra": {
+      "eas": {
+        "projectId": "4f97b647-74f8-48b1-ba96-fe533b89ba3d"
+      }
     }
   }
 }
