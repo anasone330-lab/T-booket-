@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "T-booket",
-    "slug": "t-booket",
+    "slug": "t-booket-z1lk8raz8o2h6swvpqq",
     "version": "1.0.5",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
@@ -21,7 +21,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "f9p849s1-2eed-4978-a56f-9c222k45eca5"
+        "projectId": "f9a849a1-26ed-4978-a56f-9c222645aca5"
       }
     },
     "sdkVersion": "50.0.0",
