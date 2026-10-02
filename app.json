@@ -24,6 +24,9 @@
         "projectId": "f9a849a1-26ed-4978-a56f-9c222645aca5"
       }
     },
+    "cli": {
+      "appVersionSource": "remote"
+    },
     "sdkVersion": "50.0.0",
     "platforms": [
       "ios",
