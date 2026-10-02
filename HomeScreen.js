@@ -58,13 +58,21 @@ export default function HomeScreen({ onSelectStadium, onOpenRating, activeTab, s
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           renderItem={({ item }) => (
-            <TouchableOpacity style={styles.card} onPress={() => onSelectStadium(item)}>
+            <TouchableOpacity 
+              style={styles.card} 
+              activeOpacity={0.9}
+              onPress={() => {
+                if (onSelectStadium) onSelectStadium(item);
+              }}
+            >
               <Image source={{ uri: item.image }} style={styles.image} />
               <View style={styles.cardBody}>
                 <View style={styles.row}>
                   <Text style={styles.name}>{item.name}</Text>
-                  <TouchableOpacity onPress={() => onOpenRating(item)}>
-                    <Text style={styles.rating}>⭐ {item.rating} (التقييمات)</Text>
+                  <TouchableOpacity onPress={() => {
+                    if (onOpenRating) onOpenRating(item);
+                  }}>
+                    <Text style={styles.rating}>⭐ {item.rating}</Text>
                   </TouchableOpacity>
                 </View>
                 <Text style={styles.location}>{item.location}</Text>
@@ -75,23 +83,19 @@ export default function HomeScreen({ onSelectStadium, onOpenRating, activeTab, s
         />
       </View>
 
+      {/* الشريط السفلي الموحد (بدون تكرار وبدون حجوزات عامة) */}
       <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('support')}>
+        <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab && setActiveTab('support')}>
           <Text style={styles.navIcon}>🎧</Text>
           <Text style={[styles.navText, activeTab === 'support' && styles.activeNavText]}>الدعم</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('profile')}>
+        <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab && setActiveTab('profile')}>
           <Text style={styles.navIcon}>👤</Text>
           <Text style={[styles.navText, activeTab === 'profile' && styles.activeNavText]}>حسابي</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('bookings')}>
-          <Text style={styles.navIcon}>📅</Text>
-          <Text style={[styles.navText, activeTab === 'bookings' && styles.activeNavText]}>حجوزاتي</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('home')}>
+        <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab && setActiveTab('home')}>
           <Text style={styles.navIcon}>🏟️</Text>
           <Text style={[styles.navText, activeTab === 'home' && styles.activeNavText]}>الرئيسية</Text>
         </TouchableOpacity>
@@ -109,7 +113,7 @@ const styles = StyleSheet.create({
   searchIcon: { fontSize: 16, marginLeft: 8 },
   listWrapper: { flex: 1 },
   listContent: { padding: 16 },
-  card: { backgroundColor: '#ffffff', borderRadius: 12, overflow: 'hidden', marginBottom: 16, borderBottomWidth: 1, borderColor: '#e2e8f0' },
+  card: { backgroundColor: '#ffffff', borderRadius: 12, overflow: 'hidden', marginBottom: 16, borderBottomWidth: 1, borderColor: '#e2e8f0', elevation: 2 },
   image: { width: '100%', height: 140 },
   cardBody: { padding: 12 },
   row: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center' },
@@ -118,7 +122,7 @@ const styles = StyleSheet.create({
   location: { fontSize: 12, color: '#64748b', textAlign: 'right', marginTop: 4 },
   price: { fontSize: 14, color: '#16a34a', fontWeight: 'bold', textAlign: 'right', marginTop: 6 },
   bottomNav: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', backgroundColor: '#ffffff', paddingVertical: 8, borderTopWidth: 1, borderColor: '#e2e8f0' },
-  navItem: { alignItems: 'center' },
+  navItem: { alignItems: 'center', flex: 1 },
   navIcon: { fontSize: 18 },
   navText: { fontSize: 10, color: '#64748b', marginTop: 2 },
   activeNavText: { color: '#2563eb', fontWeight: 'bold' },
