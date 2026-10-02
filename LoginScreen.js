@@ -1,18 +1,34 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { supabase } from './Supabase';
 
-// نمرر onLogin و onNavigateToRegister كـ props
 export default function LoginScreen({ onLogin, onNavigateToRegister }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    // نحدد الدور: إذا كان الإيميل يحتوي على كلمة owner يعتبر مالك ملعب، وإلا فهو زبون عادي
-    const role = email.toLowerCase().includes('owner') ? 'owner' : 'customer';
-    
-    // استدعاء دالة الدخول وتمرين الدور
-    if (onLogin) {
-      onLogin(role);
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('خطأ', 'يرجى إدخال البريد الإلكتروني وكلمة المرور');
+      return;
+    }
+
+    setLoading(true);
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password: password,
+    });
+
+    setLoading(false);
+
+    if (error) {
+      Alert.alert('خطأ في تسجيل الدخول', error.message);
+    } else {
+      Alert.alert('نجاح', 'تم تسجيل الدخول بنجاح');
+      const role = email.toLowerCase().includes('owner') ? 'owner' : 'customer';
+      if (onLogin) {
+        onLogin(role);
+      }
     }
   };
 
@@ -26,6 +42,7 @@ export default function LoginScreen({ onLogin, onNavigateToRegister }) {
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
+        keyboardType="email-address"
       />
 
       <TextInput
@@ -36,13 +53,12 @@ export default function LoginScreen({ onLogin, onNavigateToRegister }) {
         onChangeText={setPassword}
       />
 
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>دخول</Text>
+      <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+        <Text style={styles.buttonText}>{loading ? 'جاري الدخول...' : 'دخول'}</Text>
       </TouchableOpacity>
 
-      {/* زر للانتقال لشاشة إنشاء حساب جديد */}
       <TouchableOpacity 
-        style={styles.linkButton} 
+        style={styles.linkButton}
         onPress={() => onNavigateToRegister && onNavigateToRegister()}
       >
         <Text style={styles.linkText}>ليس لديك حساب؟ سجل الآن</Text>
