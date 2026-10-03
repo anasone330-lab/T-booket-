@@ -1,39 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, TextInput } from 'react-native';
-
-const STADIUMS = [
-  {
-    id: '1',
-    name: 'ملعب الأسطورة الخماسي',
-    location: 'بغداد - الجادرية',
-    price: '30,000 د.ع / ساعة',
-    rating: '4.8',
-    image: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=500',
-  },
-  {
-    id: '2',
-    name: 'ملعب الملوك الدولي',
-    location: 'بغداد - المنصور',
-    price: '40,000 د.ع / ساعة',
-    rating: '4.9',
-    image: 'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=500',
-  },
-  {
-    id: '3',
-    name: 'ملعب النجوم الخماسي',
-    location: 'بغداد - الكرادة',
-    price: '25,000 د.ع / ساعة',
-    rating: '4.6',
-    image: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=500',
-  },
-];
+import { supabase } from './Supabase'; // استدعاء الاتصال بقاعدة البيانات
 
 export default function HomeScreen({ onSelectStadium, onOpenRating, activeTab, setActiveTab }) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [stadiums, setStadiums] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredStadiums = STADIUMS.filter(
+  // جلب الملاعب من قاعدة بيانات Supabase عند فتح الشاشة
+  useEffect(() => {
+    fetchStadiums();
+  }, []);
+
+  const fetchStadiums = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.from('stadiums').select('*');
+      if (error) {
+        console.error('خطأ في جلب الملاعب:', error.message);
+      } else if (data) {
+        setStadiums(data);
+      }
+    } catch (err) {
+      console.error('حدث استثناء:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredStadiums = stadiums.filter(
     (stadium) =>
-      stadium.name.includes(searchQuery) || stadium.location.includes(searchQuery)
+      (stadium.name && stadium.name.includes(searchQuery)) || 
+      (stadium.location && stadium.location.includes(searchQuery))
   );
 
   return (
@@ -53,37 +51,46 @@ export default function HomeScreen({ onSelectStadium, onOpenRating, activeTab, s
       </View>
 
       <View style={styles.listWrapper}>
-        <FlatList
-          data={filteredStadiums}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          renderItem={({ item }) => (
-            <TouchableOpacity 
-              style={styles.card} 
-              activeOpacity={0.9}
-              onPress={() => {
-                if (onSelectStadium) onSelectStadium(item);
-              }}
-            >
-              <Image source={{ uri: item.image }} style={styles.image} />
-              <View style={styles.cardBody}>
-                <View style={styles.row}>
-                  <Text style={styles.name}>{item.name}</Text>
-                  <TouchableOpacity onPress={() => {
-                    if (onOpenRating) onOpenRating(item);
-                  }}>
-                    <Text style={styles.rating}>⭐ {item.rating}</Text>
-                  </TouchableOpacity>
+        {loading ? (
+          <View style={styles.center}>
+            <Text style={styles.loadingText}>جاري تحميل الملاعب من السيرفر...</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={filteredStadiums}
+            keyExtractor={(item) => (item.id ? item.id.toString() : Math.random().toString())}
+            contentContainerStyle={styles.listContent}
+            renderItem={({ item }) => (
+              <TouchableOpacity 
+                style={styles.card} 
+                activeOpacity={0.9}
+                onPress={() => {
+                  if (onSelectStadium) onSelectStadium(item);
+                }}
+              >
+                <Image 
+                  source={{ uri: item.image || 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=500' }} 
+                  style={styles.image} 
+                />
+                <View style={styles.cardBody}>
+                  <View style={styles.row}>
+                    <Text style={styles.name}>{item.name}</Text>
+                    <TouchableOpacity onPress={() => {
+                      if (onOpenRating) onOpenRating(item);
+                    }}>
+                      <Text style={styles.rating}>⭐ {item.rating || '4.8'}</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <Text style={styles.location}>{item.location}</Text>
+                  <Text style={styles.price}>{item.price || '30,000 د.ع / ساعة'}</Text>
                 </View>
-                <Text style={styles.location}>{item.location}</Text>
-                <Text style={styles.price}>{item.price}</Text>
-              </View>
-            </TouchableOpacity>
-          )}
-        />
+              </TouchableOpacity>
+            )}
+          />
+        )}
       </View>
 
-      {/* الشريط السفلي الموحد (بدون تكرار وبدون حجوزات عامة) */}
+      {/* الشريط السفلي الموحد */}
       <View style={styles.bottomNav}>
         <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab && setActiveTab('support')}>
           <Text style={styles.navIcon}>🎧</Text>
@@ -113,6 +120,8 @@ const styles = StyleSheet.create({
   searchIcon: { fontSize: 16, marginLeft: 8 },
   listWrapper: { flex: 1 },
   listContent: { padding: 16 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { fontSize: 14, color: '#64748b' },
   card: { backgroundColor: '#ffffff', borderRadius: 12, overflow: 'hidden', marginBottom: 16, borderBottomWidth: 1, borderColor: '#e2e8f0', elevation: 2 },
   image: { width: '100%', height: 140 },
   cardBody: { padding: 12 },
