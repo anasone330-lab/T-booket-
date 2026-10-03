@@ -12,3 +12,17 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     detectSessionInUrl: false,
   },
 });
+
+// أضف هذه الدالة هنا لاختبار جلب البيانات من جدول stadiums
+export const testConnection = async () => {
+  try {
+    const { data, error } = await supabase.from('stadiums').select('*');
+    if (error) {
+      console.log('خطأ في الاتصال:', error.message);
+    } else {
+      console.log('تم الاتصال بنجاح! بيانات الملاعب:', data);
+    }
+  } catch (err) {
+    console.log('حدث استثناء:', err);
+  }
+};
