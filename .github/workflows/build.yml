@@ -25,13 +25,11 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Generate Android folder cleanly
+      - name: Generate Android folder directly
         run: |
-          cd ..
-          npx @react-native-community/cli init TempApp --skip-install
-          cp -r TempApp/android ./T-booket/android
-          rm -rf TempApp
-          cd T-booket
+          npx @react-native-community/cli init TbooketTemp --skip-install
+          cp -r TbooketTemp/android ./android
+          rm -rf TbooketTemp
 
       - name: Build with Gradle
         run: |
