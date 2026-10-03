@@ -25,12 +25,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Generate Android project
-        run: npx expo prebuild --platform android
-
       - name: Build with Gradle
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleRelease
- 
