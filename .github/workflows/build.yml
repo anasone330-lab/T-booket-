@@ -25,13 +25,11 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Generate Android folder if missing
+      - name: Force Generate Android folder
         run: |
-          if [ ! -d "android" ]; then
-            npx @react-native-community/cli init TempProject --skip-install
-            mv TempProject/android ./android
-            rm -rf TempProject
-          fi
+          npx @react-native-community/cli init TempProject --skip-install --yes
+          cp -r TempProject/android ./android
+          rm -rf TempProject
 
       - name: Build with Gradle
         run: |
