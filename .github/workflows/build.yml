@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Android APK with Supabase & Native Setup
 
 on:
   push:
@@ -22,16 +22,18 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install dependencies
-        run: npm install
-
-      - name: Generate Android folder directly
+      - name: Install dependencies & Supabase client
         run: |
-          npx @react-native-community/cli init TbooketTemp --skip-install
-          cp -r TbooketTemp/android ./android
-          rm -rf TbooketTemp
+          npm install
+          npm install @supabase/supabase-js
 
-      - name: Build with Gradle
+      - name: Auto-generate Android Architecture & Configs
+        run: |
+          npx @react-native-community/cli init TempApp --skip-install
+          mv TempApp/android ./android
+          rm -rf TempApp
+
+      - name: Build Android Release APK
         run: |
           cd android
           chmod +x gradlew
