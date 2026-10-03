@@ -29,7 +29,7 @@ jobs:
         run: |
           cd ..
           npx @react-native-community/cli init TempApp --skip-install
-          cp -r TempApp/T-booket/android ./T-booket/android || cp -r TempApp/android ./T-booket/android
+          cp -r TempApp/android ./T-booket/android
           rm -rf TempApp
           cd T-booket
 
