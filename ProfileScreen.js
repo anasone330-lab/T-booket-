@@ -46,7 +46,7 @@ export default function ProfileScreen({ onLogout, onBack }) {
 
       const { error } = await supabase
         .from('profiles')
-        update({
+        .update({
           name: name.trim(),
           phone: phone.trim(),
           bio: bio.trim(),
@@ -101,7 +101,7 @@ export default function ProfileScreen({ onLogout, onBack }) {
           style={styles.input}
           value={phone}
           onChangeText={setPhone}
-          keyboardPhone="phone-pad"
+          keyboardType="phone-pad"
           placeholder="أدخل رقم الهاتف"
         />
 
