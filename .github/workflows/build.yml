@@ -27,28 +27,9 @@ jobs:
           npm install
           npm install @supabase/supabase-js
 
-      - name: Run Smart Auto-Healing & File Generator Script
+      - name: Run Local Auto-Fix Script
         run: |
-          node -e '
-            const fs = require("fs");
-            const path = require("path");
-
-            console.log("🔍 جاري فحص ملفات المشروع وهيكليته...");
-            const filesToCheck = [
-              { name: "App.js", content: "import React from \"react\"; import { View, Text } from \"react-native\"; export default function App() { return (<View><Text>T-booket Active</Text></View>); }" },
-              { name: "Supabase.js", content: "import { createClient } from \"@supabase/supabase-js\"; export const supabase = createClient(\"YOUR_URL\", \"YOUR_KEY\");" }
-            ];
-
-            filesToCheck.forEach(file => {
-              if (!fs.existsSync(file.name)) {
-                fs.writeFileSync(file.name, file.content, \"utf8\");
-                console.log(`✨ تم إنشاء ${file.name} تلقائياً.`);
-              } else {
-                console.log(`✅ ${file.name} موجود وبحالة سليمة.`);
-              }
-            });
-            console.log("✨ تمت عملية الأتمتة والفحص بنجاح!");
-          '
+          node auto-fix.js
 
       - name: Check or Generate Android Architecture
         run: |
