@@ -30,3 +30,4 @@ jobs:
           cd android
           chmod +x gradlew
           ./gradlew assembleRelease
+ 
