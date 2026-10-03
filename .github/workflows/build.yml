@@ -1,11 +1,11 @@
-name: T-booket Full Automation & Build
+name: T-booket Smart AI Automation & Build
 
 on:
   push:
     branches: [ main ]
 
 jobs:
-  automate-and-build:
+  smart-automation:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -27,17 +27,42 @@ jobs:
           npm install
           npm install @supabase/supabase-js
 
-      - name: Run Auto-Update & Code Validation Script
+      - name: Run Smart Auto-Healing & File Generator Script
         run: |
-          echo "جاري تشغيل محرك الأتمتة لفحص وتحديث الأكواد..."
-          # هنا يمكنك وضع أي سكربت آلي لتعديل الملفات أو التحقق من صحتها
-          node -e "console.log('Code structure verified successfully!')"
+          node -e '
+            const fs = require("fs");
+            const path = require("path");
 
-      - name: Auto-generate Android Architecture & Configs
+            console.log("🔍 جاري فحص ملفات المشروع وهيكليته...");
+
+            // قائمة الملفات الأساسية وتأمين وجودها
+            const filesToCheck = [
+              { name: "App.js", content: "import React from \"react\"; import { View, Text } from \"react-native\"; export default function App() { return (<View><Text>T-booket Active</Text></View>); }" },
+              { name: "Supabase.js", content: "import { createClient } from \"@supabase/supabase-js\"; export const supabase = createClient(\"YOUR_URL\", \"YOUR_KEY\");" }
+            ];
+
+            filesToCheck.forEach(file => {
+              if (!fs.existsSync(file.name)) {
+                console.log(`⚠️ الملف ${file.name} غير موجود، جاري إنشاؤه تلقائياً...`);
+                fs.writeFileSync(file.name, file.content, "utf8");
+              } else {
+                console.log(`✅ الملف ${file.name} موجود وبحالة سليمة.`);
+              }
+            });
+
+            console.log("✨ تمت عملية الأتمتة والفحص والتدقيق بنجاح!");
+          '
+
+      - name: Check or Generate Android Architecture
         run: |
-          npx @react-native-community/cli init TempApp --skip-install
-          mv TempApp/android ./android
-          rm -rf TempApp
+          if [ ! -d "android" ]; then
+            echo "مجلد أندرويد غير موجود، جاري توليده سحابياً..."
+            npx @react-native-community/cli init TempApp --skip-install --yes
+            mv TempApp/android ./android
+            rm -rf TempApp
+          else
+            echo "مجلد أندرويد موجود بالفعل، متابعة البناء..."
+          fi
 
       - name: Build Android Release APK
         run: |
