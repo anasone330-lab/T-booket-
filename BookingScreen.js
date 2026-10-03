@@ -1,139 +1,105 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  ScrollView, 
-  Alert, 
-  Linking 
-} from 'react-native';
-import PaymentScreen from './PaymentScreen';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { supabase } from './Supabase';
 
-export default function BookingScreen({ venueData, onConfirmBooking }) {
-  const [selectedTime, setSelectedTime] = useState(null);
-  const [showPayment, setShowPayment] = useState(false);
+export default function BookingScreen({ stadium, onBack, onBookingSuccess }) {
+  const [selectedDate, setSelectedDate] = useState('اليوم');
+  const [selectedTime, setSelectedTime] = useState('18:00 - 19:00');
+  const [loading, setLoading] = useState(false);
 
-  const venue = venueData || {
-    id: 1,
-    name: 'ملعب الأبطال',
-    price: '25,000 دينار / ساعة',
-    latitude: 34.1983,
-    longitude: 43.8742,
-  };
-
-  const availableTimes = [
-    '04:00 مساءً - 05:00 مساءً',
-    '05:00 مساءً - 06:00 مساءً',
-    '08:00 مساءً - 09:00 مساءً',
-    '09:00 مساءً - 10:00 مساءً',
+  const times = [
+    '15:00 - 16:00',
+    '16:00 - 17:00',
+    '17:00 - 18:00',
+    '18:00 - 19:00',
+    '19:00 - 20:00',
+    '20:00 - 21:00',
   ];
 
-  const openNavigation = () => {
-    const wazeUrl = `https://waze.com/ul?ll=${venue.latitude},${venue.longitude}&navigate=yes`;
-    const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${venue.latitude},${venue.longitude}`;
+  const handleBooking = async () => {
+    try {
+      setLoading(true);
+      // إرسال بيانات الحجز إلى جدول bookings في قاعدة بيانات Supabase
+      const { error } = await supabase.from('bookings').insert([
+        {
+          stadium_id: stadium?.id,
+          stadium_name: stadium?.name || 'ملعب غير محدد',
+          date: selectedDate,
+          time_slot: selectedTime,
+          price: stadium?.price || '30,000 د.ع',
+          status: 'confirmed',
+        },
+      ]);
 
-    Linking.canOpenURL(wazeUrl)
-      .then((supported) => {
-        if (supported) {
-          Linking.openURL(wazeUrl);
-        } else {
-          Linking.openURL(googleMapsUrl);
-        }
-      })
-      .catch(() => Alert.alert('خطأ', 'تعذر فتح تطبيق الخرائط'));
-  };
-
-  const handleProceedToPayment = () => {
-    if (!selectedTime) {
-      Alert.alert('تنبيه', 'يرجى اختيار التوقيت المناسب للحجز أولاً');
-      return;
-    }
-    // الانتقال لشاشة الدفع الإلكتروني عبر ماستركارد الرافدين
-    setShowPayment(true);
-  };
-
-  const handlePaymentComplete = (method) => {
-    if (onConfirmBooking) {
-      onConfirmBooking({
-        venueName: venue.name,
-        timeSlot: selectedTime,
-        price: venue.price,
-        paymentMethod: method,
-      });
-    } else {
-      Alert.alert('تم الحجز بنجاح!', `تم حجز ${venue.name} في الوقت (${selectedTime}) بنجاح.`);
-      setShowPayment(false);
-      setSelectedTime(null);
+      if (error) {
+        Alert.alert('خطأ', 'فشل تثبيت الحجز: ' + error.message);
+      } else {
+        Alert.alert('تم بنجاح! ⚽', 'تم تأكيد حجز الملعب بنجاح وإرساله إلى السيرفر.');
+        if (onBookingSuccess) onBookingSuccess();
+      }
+    } catch (err) {
+      Alert.alert('خطأ غير متوقع', err.message);
+    } finally {
+      setLoading(false);
     }
   };
-
-  // إذا تم اختيار الوقت، نعرض شاشة الدفع الإلكتروني لماستركارد الرافدين
-  if (showPayment) {
-    return (
-      <View style={{ flex: 1 }}>
-        <TouchableOpacity 
-          style={styles.backToBooking} 
-          onPress={() => setShowPayment(false)}
-        >
-          <Text style={styles.backToBookingText}>← العودة لاختيار الوقت</Text>
-        </TouchableOpacity>
-        <PaymentScreen onPaymentComplete={handlePaymentComplete} />
-      </View>
-    );
-  }
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>{venue.name}</Text>
-      <Text style={styles.priceTag}>السعر: {venue.price}</Text>
-
-      <TouchableOpacity style={styles.wazeButton} onPress={openNavigation}>
-        <Text style={styles.wazeButtonText}>🚗 فتح موقع الملعب عبر Waze / Google Maps</Text>
+      {/* زر العودة */}
+      <TouchableOpacity style={styles.backButton} onPress={onBack}>
+        <Text style={styles.backButtonText}>← عودة للملاعب</Text>
       </TouchableOpacity>
 
-      <Text style={styles.sectionTitle}>اختر الوقت المناسب (على مدار 24 ساعة):</Text>
+      <View style={styles.card}>
+        <Text style={styles.title}>{stadium?.name || 'تفاصيل الملعب'}</Text>
+        <Text style={styles.location}>📍 {stadium?.location || 'بغداد'}</Text>
+        <Text style={styles.price}>💰 {stadium?.price || '30,000 د.ع / ساعة'}</Text>
+      </View>
 
-      {availableTimes.map((time, index) => (
-        <TouchableOpacity
-          key={index}
-          style={[
-            styles.timeCard,
-            selectedTime === time && styles.selectedTimeCard,
-          ]}
-          onPress={() => setSelectedTime(time)}
-        >
-          <Text
-            style={[
-              styles.timeText,
-              selectedTime === time && styles.selectedTimeText,
-            ]}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>اختر وقت الحجز:</Text>
+        {times.map((time, index) => (
+          <TouchableOpacity
+            key={index}
+            style={[styles.timeButton, selectedTime === time && styles.selectedTimeButton]}
+            onPress={() => setSelectedTime(time)}
           >
-            {time}
-          </Text>
-        </TouchableOpacity>
-      ))}
+            <Text style={[styles.timeText, selectedTime === time && styles.selectedTimeText]}>
+              {time}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
-      <TouchableOpacity style={styles.confirmButton} onPress={handleProceedToPayment}>
-        <Text style={styles.confirmButtonText}>المتابعة إلى الدفع الإلكتروني 💳</Text>
+      <TouchableOpacity 
+        style={[styles.bookButton, loading && styles.disabledButton]} 
+        onPress={handleBooking}
+        disabled={loading}
+      >
+        <Text style={styles.bookButtonText}>
+          {loading ? 'جاري تثبيت الحجز...' : 'تأكيد الحجز الآن ⚽'}
+        </Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8F9FA', padding: 20 },
-  title: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', color: '#1F2937', marginTop: 10 },
-  priceTag: { fontSize: 16, textAlign: 'center', color: '#059669', fontWeight: '600', marginVertical: 8 },
-  wazeButton: { backgroundColor: '#33CCFF', paddingVertical: 12, borderRadius: 10, alignItems: 'center', marginVertical: 15 },
-  wazeButtonText: { color: '#000000', fontSize: 15, fontWeight: 'bold' },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#374151', marginTop: 10, marginBottom: 12, textAlign: 'right' },
-  timeCard: { backgroundColor: '#FFFFFF', padding: 15, borderRadius: 8, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 10, alignItems: 'center' },
-  selectedTimeCard: { backgroundColor: '#10B981', borderColor: '#059669' },
-  timeText: { fontSize: 15, color: '#374151', fontWeight: '500' },
-  selectedTimeText: { color: '#FFFFFF', fontWeight: 'bold' },
-  confirmButton: { backgroundColor: '#2563EB', paddingVertical: 14, borderRadius: 10, alignItems: 'center', marginTop: 20, marginBottom: 40 },
-  confirmButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
-  backToBooking: { padding: 12, backgroundColor: '#e2e8f0', alignItems: 'center' },
-  backToBookingText: { color: '#1e293b', fontWeight: 'bold', fontSize: 14 }
+  container: { flex: 1, backgroundColor: '#f8f9fa', padding: 16 },
+  backButton: { marginBottom: 16, alignSelf: 'flex-end' },
+  backButtonText: { fontSize: 14, color: '#2563eb', fontWeight: 'bold' },
+  card: { backgroundColor: '#ffffff', borderRadius: 12, padding: 16, marginBottom: 20, elevation: 2 },
+  title: { fontSize: 18, fontWeight: 'bold', color: '#1e293b', textAlign: 'right', marginBottom: 6 },
+  location: { fontSize: 14, color: '#64748b', textAlign: 'right', marginBottom: 4 },
+  price: { fontSize: 14, color: '#16a34a', fontWeight: 'bold', textAlign: 'right' },
+  section: { marginBottom: 24 },
+  sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#0f172a', textAlign: 'right', marginBottom: 12 },
+  timeButton: { backgroundColor: '#ffffff', padding: 12, borderRadius: 8, marginBottom: 8, borderWidth: 1, borderColor: '#e2e8f0', alignItems: 'center' },
+  selectedTimeButton: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
+  timeText: { fontSize: 14, color: '#1e293b' },
+  selectedTimeText: { color: '#ffffff', fontWeight: 'bold' },
+  bookButton: { backgroundColor: '#16a34a', padding: 16, borderRadius: 12, alignItems: 'center', marginBottom: 40 },
+  disabledButton: { backgroundColor: '#94a3b8' },
+  bookButtonText: { fontSize: 16, fontWeight: 'bold', color: '#ffffff' },
 });
