@@ -27,7 +27,7 @@ jobs:
 
       - name: Force Generate Android folder
         run: |
-          npx @react-native-community/cli init TempProject --skip-install --yes
+          npx @react-native-community/cli init TempProject --skip-install
           cp -r TempProject/android ./android
           rm -rf TempProject
 
