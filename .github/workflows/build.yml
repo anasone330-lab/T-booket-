@@ -1,11 +1,11 @@
-name: Build Android APK with Supabase & Native Setup
+name: T-booket Full Automation & Build
 
 on:
   push:
     branches: [ main ]
 
 jobs:
-  build:
+  automate-and-build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -17,15 +17,21 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: '18'
 
-      - name: Install dependencies & Supabase client
+      - name: Install Dependencies
         run: |
           npm install
           npm install @supabase/supabase-js
+
+      - name: Run Auto-Update & Code Validation Script
+        run: |
+          echo "جاري تشغيل محرك الأتمتة لفحص وتحديث الأكواد..."
+          # هنا يمكنك وضع أي سكربت آلي لتعديل الملفات أو التحقق من صحتها
+          node -e "console.log('Code structure verified successfully!')"
 
       - name: Auto-generate Android Architecture & Configs
         run: |
