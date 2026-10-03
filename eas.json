@@ -11,12 +11,12 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
-      },
-      "env": {
-        "NODE_VERSION": "22.8.8"
       }
     },
     "production": {}
+  },
+  "env": {
+    "NODE_VERSION": "22.8.8"
   },
   "submit": {
     "production": {}
