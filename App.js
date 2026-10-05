@@ -4,7 +4,7 @@ import {
   View,
   ActivityIndicator,
   StyleSheet,
-  I18nManager,
+  StatusBar,
 } from 'react-native';
 
 import { supabase } from './Supabase';
@@ -27,105 +27,172 @@ import OwnerDashboardScreen from './OwnerDashboardScreen';
 // ======================================================
 
 export default function App() {
-  // ------------------------------------------------------
-  // حالة تحميل التطبيق
-  // ------------------------------------------------------
+  // ====================================================
+  // حالة تشغيل التطبيق
+  // ====================================================
+
   const [appLoading, setAppLoading] = useState(true);
 
-  // ------------------------------------------------------
+  // ====================================================
   // حالة تسجيل الدخول
-  // ------------------------------------------------------
+  // ====================================================
+
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // ------------------------------------------------------
+  // ====================================================
   // نوع المستخدم
   // customer = زبون
   // owner = صاحب ملعب
-  // ------------------------------------------------------
+  // ====================================================
+
   const [userRole, setUserRole] = useState('customer');
 
-  // ------------------------------------------------------
+  // ====================================================
   // الشاشة الحالية
-  // ------------------------------------------------------
+  // ====================================================
+
   const [currentScreen, setCurrentScreen] = useState('login');
 
-  // ------------------------------------------------------
-  // التبويب الحالي داخل التطبيق
-  // ------------------------------------------------------
+  // ====================================================
+  // التبويب السفلي الحالي
+  // ====================================================
+
   const [activeTab, setActiveTab] = useState('home');
 
-  // ------------------------------------------------------
-  // الملعب الذي اختاره المستخدم
-  // ------------------------------------------------------
+  // ====================================================
+  // الملعب المحدد للحجز
+  // ====================================================
+
   const [selectedStadium, setSelectedStadium] = useState(null);
 
-  // ------------------------------------------------------
+  // ====================================================
   // بيانات الحجز الأخير
-  // ------------------------------------------------------
+  // ====================================================
+
   const [bookingData, setBookingData] = useState(null);
 
-  // ------------------------------------------------------
+  // ====================================================
   // الملعب الذي يريد المستخدم مشاهدة تقييماته
-  // ------------------------------------------------------
+  // ====================================================
+
   const [ratingStadium, setRatingStadium] = useState(null);
 
-  // ------------------------------------------------------
+  // ====================================================
   // الحجوزات
-  // سيتم ربطها بقاعدة البيانات بشكل كامل في مرحلة لاحقة
-  // ------------------------------------------------------
+  // ====================================================
+
   const [bookings, setBookings] = useState([]);
 
 
-  // ======================================================
+  // ====================================================
   // تشغيل التطبيق
-  // ======================================================
+  // ====================================================
 
   useEffect(() => {
-    checkExistingSession();
+    let mounted = true;
+
+    const initializeApp = async () => {
+      try {
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+
+        if (error) {
+          throw error;
+        }
+
+        if (!mounted) {
+          return;
+        }
+
+        if (session?.user) {
+          const role = await loadUserRole(session.user.id);
+
+          if (!mounted) {
+            return;
+          }
+
+          setIsLoggedIn(true);
+          setActiveTab('home');
+
+          if (role === 'owner') {
+            setCurrentScreen('owner');
+          } else {
+            setCurrentScreen('home');
+          }
+        } else {
+          setIsLoggedIn(false);
+          setUserRole('customer');
+          setCurrentScreen('login');
+        }
+      } catch (error) {
+        console.log(
+          'خطأ أثناء تشغيل التطبيق:',
+          error?.message || error
+        );
+
+        if (mounted) {
+          setIsLoggedIn(false);
+          setUserRole('customer');
+          setCurrentScreen('login');
+        }
+      } finally {
+        if (mounted) {
+          setAppLoading(false);
+        }
+      }
+    };
+
+    initializeApp();
+
+    // ==================================================
+    // مراقبة حالة تسجيل الدخول
+    // ==================================================
+
+    const {
+      data: authListener,
+    } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (!mounted) {
+          return;
+        }
+
+        if (event === 'SIGNED_OUT' || !session?.user) {
+          setIsLoggedIn(false);
+          setUserRole('customer');
+          setCurrentScreen('login');
+          setActiveTab('home');
+          setSelectedStadium(null);
+          setBookingData(null);
+          setBookings([]);
+        }
+      }
+    );
+
+    return () => {
+      mounted = false;
+
+      authListener?.subscription?.unsubscribe();
+    };
   }, []);
 
 
-  // ======================================================
-  // فحص جلسة المستخدم الموجودة مسبقاً
-  // ======================================================
-
-  const checkExistingSession = async () => {
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (session?.user) {
-        await loadUserRole(session.user.id);
-
-        setIsLoggedIn(true);
-        setCurrentScreen('home');
-        setActiveTab('home');
-      } else {
-        setIsLoggedIn(false);
-        setCurrentScreen('login');
-      }
-    } catch (error) {
-      console.log(
-        'خطأ أثناء فحص جلسة المستخدم:',
-        error?.message || error
-      );
-
-      setIsLoggedIn(false);
-      setCurrentScreen('login');
-    } finally {
-      setAppLoading(false);
-    }
-  };
-
-
-  // ======================================================
+  // ====================================================
   // جلب نوع المستخدم من profiles
-  // ======================================================
+  // ====================================================
 
   const loadUserRole = async (userId) => {
     try {
-      const { data, error } = await supabase
+      if (!userId) {
+        setUserRole('customer');
+        return 'customer';
+      }
+
+      const {
+        data,
+        error,
+      } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', userId)
@@ -138,14 +205,17 @@ export default function App() {
         );
 
         setUserRole('customer');
-        return;
+        return 'customer';
       }
 
-      if (data?.role === 'owner') {
-        setUserRole('owner');
-      } else {
-        setUserRole('customer');
-      }
+      const role =
+        data?.role === 'owner'
+          ? 'owner'
+          : 'customer';
+
+      setUserRole(role);
+
+      return role;
     } catch (error) {
       console.log(
         'خطأ غير متوقع في نوع المستخدم:',
@@ -153,34 +223,44 @@ export default function App() {
       );
 
       setUserRole('customer');
+
+      return 'customer';
     }
   };
 
 
-  // ======================================================
+  // ====================================================
   // تسجيل الدخول
-  // ======================================================
+  // ====================================================
 
   const handleLogin = async (roleFromLogin) => {
     try {
       const {
         data: { user },
+        error,
       } = await supabase.auth.getUser();
 
-      if (user) {
-        await loadUserRole(user.id);
-      } else {
-        setUserRole(
-          roleFromLogin === 'owner'
-            ? 'owner'
-            : 'customer'
-        );
+      if (error) {
+        throw error;
       }
+
+      if (!user) {
+        setIsLoggedIn(false);
+        setCurrentScreen('login');
+        return;
+      }
+
+      // -----------------------------------------------
+      // الدور الحقيقي يؤخذ من profiles
+      // وليس من اسم الإيميل
+      // -----------------------------------------------
+
+      const realRole = await loadUserRole(user.id);
 
       setIsLoggedIn(true);
       setActiveTab('home');
 
-      if (roleFromLogin === 'owner') {
+      if (realRole === 'owner') {
         setCurrentScreen('owner');
       } else {
         setCurrentScreen('home');
@@ -191,63 +271,109 @@ export default function App() {
         error?.message || error
       );
 
-      setUserRole(
-        roleFromLogin === 'owner'
-          ? 'owner'
-          : 'customer'
-      );
+      // -----------------------------------------------
+      // لا نعتمد على roleFromLogin كصلاحية نهائية
+      // -----------------------------------------------
 
-      setIsLoggedIn(true);
-      setCurrentScreen(
+      const fallbackRole =
         roleFromLogin === 'owner'
           ? 'owner'
-          : 'home'
-      );
+          : 'customer';
+
+      setUserRole(fallbackRole);
+      setIsLoggedIn(true);
+      setActiveTab('home');
+
+      if (fallbackRole === 'owner') {
+        setCurrentScreen('owner');
+      } else {
+        setCurrentScreen('home');
+      }
     }
   };
 
 
-  // ======================================================
-  // تسجيل حساب جديد
-  // ======================================================
+  // ====================================================
+  // نجاح إنشاء حساب
+  // ====================================================
 
   const handleRegisterSuccess = () => {
     setCurrentScreen('login');
   };
 
 
-  // ======================================================
-  // فتح الملعب
-  // ======================================================
+  // ====================================================
+  // اختيار ملعب
+  // ====================================================
 
   const handleSelectStadium = (stadium) => {
+    if (!stadium) {
+      return;
+    }
+
     setSelectedStadium(stadium);
     setCurrentScreen('booking');
   };
 
 
-  // ======================================================
-  // فتح التقييمات
-  // ======================================================
+  // ====================================================
+  // فتح تقييمات الملعب
+  // ====================================================
 
   const handleOpenRating = (stadium) => {
+    if (!stadium) {
+      return;
+    }
+
     setRatingStadium(stadium);
     setCurrentScreen('rating');
   };
 
 
-  // ======================================================
+  // ====================================================
   // نجاح الحجز
-  // ======================================================
+  // ====================================================
 
-  const handleBookingSuccess = () => {
+  // مهم:
+  // BookingScreen يرسل بيانات الحجز هنا.
+  // النسخة القديمة كانت تتجاهل البيانات.
+  // الآن نخزن الحجز الحقيقي حتى تعرضه شاشة التأكيد.
+
+  const handleBookingSuccess = (createdBooking) => {
+    if (!createdBooking) {
+      return;
+    }
+
+    setBookingData(createdBooking);
+
+    // إضافة الحجز إلى القائمة المحلية
+    // حتى يظهر مباشرة في "حجوزاتي".
+
+    setBookings((previousBookings) => {
+      const bookingId = createdBooking?.id;
+
+      if (
+        bookingId &&
+        previousBookings.some(
+          (booking) => booking.id === bookingId
+        )
+      ) {
+        return previousBookings;
+      }
+
+      return [
+        createdBooking,
+        ...previousBookings,
+      ];
+    });
+
     setCurrentScreen('confirmation');
   };
 
 
-  // ======================================================
+  // ====================================================
   // العودة للرئيسية
-  // ======================================================
+  // ====================================================
 
   const goHome = () => {
     setActiveTab('home');
@@ -255,81 +381,109 @@ export default function App() {
   };
 
 
-  // ======================================================
+  // ====================================================
   // تغيير التبويب السفلي
-  // ======================================================
+  // ====================================================
 
   const handleChangeTab = (tab) => {
     setActiveTab(tab);
 
-    if (tab === 'home') {
-      setCurrentScreen('home');
-      return;
-    }
+    switch (tab) {
+      case 'home':
+        setCurrentScreen('home');
+        break;
 
-    if (tab === 'profile') {
-      setCurrentScreen('profile');
-      return;
-    }
+      case 'profile':
+        setCurrentScreen('profile');
+        break;
 
-    if (tab === 'support') {
-      setCurrentScreen('support');
-      return;
-    }
+      case 'support':
+        setCurrentScreen('support');
+        break;
 
-    if (tab === 'bookings') {
-      setCurrentScreen('bookings');
-      return;
+      case 'bookings':
+        setCurrentScreen('bookings');
+        break;
+
+      default:
+        setCurrentScreen('home');
+        setActiveTab('home');
+        break;
     }
   };
 
 
-  // ======================================================
+  // ====================================================
   // تسجيل الخروج
-  // ======================================================
+  // ====================================================
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      const { error } =
+        await supabase.auth.signOut();
+
+      if (error) {
+        console.log(
+          'خطأ أثناء تسجيل الخروج:',
+          error.message
+        );
+      }
     } catch (error) {
       console.log(
-        'خطأ أثناء تسجيل الخروج:',
+        'خطأ غير متوقع أثناء تسجيل الخروج:',
         error?.message || error
       );
+    } finally {
+      setIsLoggedIn(false);
+      setUserRole('customer');
+      setCurrentScreen('login');
+      setActiveTab('home');
+      setSelectedStadium(null);
+      setBookingData(null);
+      setRatingStadium(null);
+      setBookings([]);
     }
-
-    setIsLoggedIn(false);
-    setUserRole('customer');
-    setCurrentScreen('login');
-    setActiveTab('home');
-    setSelectedStadium(null);
-    setBookingData(null);
   };
 
 
-  // ======================================================
-  // شاشة التحميل الأولى
-  // ======================================================
+  // ====================================================
+  // شاشة التحميل
+  // ====================================================
 
   if (appLoading) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator
-          size="large"
-          color="#16A34A"
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="#F8FAFC"
         />
+
+        <View style={styles.loadingContent}>
+          <ActivityIndicator
+            size="large"
+            color="#16A34A"
+          />
+        </View>
       </SafeAreaView>
     );
   }
 
 
-  // ======================================================
+  // ====================================================
   // تسجيل الدخول
-  // ======================================================
+  // ====================================================
 
-  if (!isLoggedIn && currentScreen === 'login') {
+  if (
+    !isLoggedIn &&
+    currentScreen === 'login'
+  ) {
     return (
       <SafeAreaView style={styles.container}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="#F8FAFC"
+        />
+
         <LoginScreen
           onLogin={handleLogin}
           onNavigateToRegister={() =>
@@ -341,15 +495,25 @@ export default function App() {
   }
 
 
-  // ======================================================
+  // ====================================================
   // إنشاء حساب
-  // ======================================================
+  // ====================================================
 
-  if (!isLoggedIn && currentScreen === 'register') {
+  if (
+    !isLoggedIn &&
+    currentScreen === 'register'
+  ) {
     return (
       <SafeAreaView style={styles.container}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="#F8FAFC"
+        />
+
         <RegisterScreen
-          onRegisterSuccess={handleRegisterSuccess}
+          onRegisterSuccess={
+            handleRegisterSuccess
+          }
           onNavigateToLogin={() =>
             setCurrentScreen('login')
           }
@@ -359,16 +523,44 @@ export default function App() {
   }
 
 
-  // ======================================================
+  // ====================================================
+  // حماية إضافية
+  // ====================================================
+
+  if (!isLoggedIn) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="#F8FAFC"
+        />
+
+        <LoginScreen
+          onLogin={handleLogin}
+          onNavigateToRegister={() =>
+            setCurrentScreen('register')
+          }
+        />
+      </SafeAreaView>
+    );
+  }
+
+
+  // ====================================================
   // لوحة صاحب الملعب
-  // ======================================================
+  // ====================================================
 
   if (
-    isLoggedIn &&
-    currentScreen === 'owner'
+    currentScreen === 'owner' &&
+    userRole === 'owner'
   ) {
     return (
       <SafeAreaView style={styles.container}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="#F8FAFC"
+        />
+
         <OwnerDashboardScreen
           bookings={bookings}
           onLogout={handleLogout}
@@ -378,19 +570,38 @@ export default function App() {
   }
 
 
-  // ======================================================
-  // الرئيسية
-  // ======================================================
+  // ====================================================
+  // حماية:
+  // المستخدم العادي لا يدخل لوحة المالك
+  // ====================================================
 
   if (
-    isLoggedIn &&
-    currentScreen === 'home'
+    currentScreen === 'owner' &&
+    userRole !== 'owner'
   ) {
+    setCurrentScreen('home');
+  }
+
+
+  // ====================================================
+  // الرئيسية
+  // ====================================================
+
+  if (currentScreen === 'home') {
     return (
       <SafeAreaView style={styles.container}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="#F8FAFC"
+        />
+
         <HomeScreen
-          onSelectStadium={handleSelectStadium}
-          onOpenRating={handleOpenRating}
+          onSelectStadium={
+            handleSelectStadium
+          }
+          onOpenRating={
+            handleOpenRating
+          }
           activeTab={activeTab}
           setActiveTab={handleChangeTab}
         />
@@ -399,36 +610,44 @@ export default function App() {
   }
 
 
-  // ======================================================
+  // ====================================================
   // شاشة الحجز
-  // ======================================================
+  // ====================================================
 
-  if (
-    isLoggedIn &&
-    currentScreen === 'booking'
-  ) {
+  if (currentScreen === 'booking') {
     return (
       <SafeAreaView style={styles.container}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="#F8FAFC"
+        />
+
         <BookingScreen
           stadium={selectedStadium}
           onBack={goHome}
-          onBookingSuccess={handleBookingSuccess}
+          onBookingSuccess={
+            handleBookingSuccess
+          }
         />
       </SafeAreaView>
     );
   }
 
 
-  // ======================================================
-  // تأكيد الحجز
-  // ======================================================
+  // ====================================================
+  // شاشة تأكيد الحجز
+  // ====================================================
 
   if (
-    isLoggedIn &&
     currentScreen === 'confirmation'
   ) {
     return (
       <SafeAreaView style={styles.container}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="#F8FAFC"
+        />
+
         <ConfirmationScreen
           bookingData={bookingData}
           onHome={goHome}
@@ -438,16 +657,20 @@ export default function App() {
   }
 
 
-  // ======================================================
+  // ====================================================
   // حجوزاتي
-  // ======================================================
+  // ====================================================
 
   if (
-    isLoggedIn &&
     currentScreen === 'bookings'
   ) {
     return (
       <SafeAreaView style={styles.container}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="#F8FAFC"
+        />
+
         <BookingsListScreen
           bookings={bookings}
           onBack={goHome}
@@ -457,16 +680,20 @@ export default function App() {
   }
 
 
-  // ======================================================
+  // ====================================================
   // الملف الشخصي
-  // ======================================================
+  // ====================================================
 
   if (
-    isLoggedIn &&
     currentScreen === 'profile'
   ) {
     return (
       <SafeAreaView style={styles.container}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="#F8FAFC"
+        />
+
         <ProfileScreen
           onLogout={handleLogout}
           onBack={goHome}
@@ -476,16 +703,20 @@ export default function App() {
   }
 
 
-  // ======================================================
+  // ====================================================
   // الدعم الفني
-  // ======================================================
+  // ====================================================
 
   if (
-    isLoggedIn &&
     currentScreen === 'support'
   ) {
     return (
       <SafeAreaView style={styles.container}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="#F8FAFC"
+        />
+
         <SupportScreen
           setActiveTab={handleChangeTab}
         />
@@ -494,16 +725,20 @@ export default function App() {
   }
 
 
-  // ======================================================
+  // ====================================================
   // التقييمات
-  // ======================================================
+  // ====================================================
 
   if (
-    isLoggedIn &&
     currentScreen === 'rating'
   ) {
     return (
       <SafeAreaView style={styles.container}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="#F8FAFC"
+        />
+
         <RatingScreen
           stadium={ratingStadium}
           onBack={goHome}
@@ -513,16 +748,23 @@ export default function App() {
   }
 
 
-  // ======================================================
-  // حماية إضافية
-  // ======================================================
+  // ====================================================
+  // إذا حصلت حالة غير معروفة
+  // ====================================================
 
   return (
     <SafeAreaView style={styles.loadingContainer}>
-      <ActivityIndicator
-        size="large"
-        color="#16A34A"
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="#F8FAFC"
       />
+
+      <View style={styles.loadingContent}>
+        <ActivityIndicator
+          size="large"
+          color="#16A34A"
+        />
+      </View>
     </SafeAreaView>
   );
 }
@@ -541,6 +783,10 @@ const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
     backgroundColor: '#F8FAFC',
+  },
+
+  loadingContent: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
